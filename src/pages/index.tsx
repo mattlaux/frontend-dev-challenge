@@ -12,7 +12,17 @@ type SearchBarProps = {
   handleSearchBarValue: (searchBarInput: string) => void;
 };
 
-// I would typically have all of these components broken up into individual files
+type SchoolObject = {
+  coordinates: {
+    lat: number;
+    long: number;
+  };
+  county: string;
+  id: string;
+  name: string;
+};
+
+// I would typically have all of these components and functions broken up into individual files
 // but requirements requested everything be done in the index.tsx file.
 
 // I would also typically have all component CSS styles in individual module files
@@ -74,6 +84,43 @@ function SchoolCard(props: SchoolCardProps): JSX.Element {
   );
 }
 
+/**
+ *
+ * @param lat1 - Latitude of user
+ * @param lon1 - Longitude of user
+ * @param lat2 - Latitude of university
+ * @param lon2 - Longitude of university
+ * @returns Distance from user to university in KM
+ */
+function getDistanceFromLatLonInKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2 - lat1);
+  var dLon = deg2rad(lon2 - lon1);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c; // Distance in km
+  return d;
+}
+
+/**
+ *
+ * @param deg - Difference between lat or long
+ * @returns Degree between two locations
+ */
+function deg2rad(deg: number) {
+  return deg * (Math.PI / 180);
+}
+
 export default function Home() {
   const [searchBarValue, setSearchBarValue] = useState("");
   // State to hold original array of schools returned from API
@@ -86,9 +133,45 @@ export default function Home() {
   const [filteredSchools, setFilteredSchools] = useState([
     { id: 0, name: "loading", county: "loading" },
   ]);
+  // State to hold whether user allows location privileges
+  const [locationAllowed, setLocationAllowed] = useState(false);
+  // State to hold user's latitude
+  const [latitude, setLatitude] = useState(0);
+  // State to hold user's longitude
+  const [longitude, setLongitude] = useState(0);
+
+  /**
+   * Event handler that is passed to SearchBar component
+   * @param searchBarInput - User input from search bar
+   */
+  function handleSearchBar(searchBarInput: string) {
+    setSearchBarValue(searchBarInput);
+  }
+
+  /**
+   * Sets latitude and longitude state if location services allowed
+   */
+  function getLocation() {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+          setLocationAllowed(true);
+        },
+        function (error) {
+          setLocationAllowed(false);
+        }
+      );
+    }
+  }
 
   // Fetches data from API and sets state
+  // The actual fetch call I would typically include in a separate file
   useEffect(() => {
+    /**
+     * Fetches data from API and sorts it depending on location preferances
+     */
     async function fetchSchools() {
       const res = await fetch("https://api.sendbeacon.com/team/schools");
 
@@ -108,26 +191,99 @@ export default function Home() {
         ]);
       }
 
-      setSchools(schoolData.schools);
-      setFilteredSchools(schoolData.schools);
+      if (locationAllowed) {
+        // Sort by location
+        setSchools(
+          schoolData.schools.sort((a: SchoolObject, b: SchoolObject) => {
+            const latA = a.coordinates.lat;
+            const longA = a.coordinates.long;
+            const latB = b.coordinates.lat;
+            const longB = b.coordinates.long;
+            const distanceA = getDistanceFromLatLonInKm(
+              latitude,
+              longitude,
+              latA,
+              longA
+            );
+            const distanceB = getDistanceFromLatLonInKm(
+              latitude,
+              longitude,
+              latB,
+              longB
+            );
+            if (distanceA < distanceB)
+              return -1; // if return -1 then sort a before b
+            else if (distanceA > distanceB)
+              return 1; // if return 1 then sort b before a
+            else return 0; // distances equal. keep original order of a and b
+          })
+        );
+        setFilteredSchools(
+          schoolData.schools.sort((a: SchoolObject, b: SchoolObject) => {
+            const latA = a.coordinates.lat;
+            const longA = a.coordinates.long;
+            const latB = b.coordinates.lat;
+            const longB = b.coordinates.long;
+            const distanceA = getDistanceFromLatLonInKm(
+              latitude,
+              longitude,
+              latA,
+              longA
+            );
+            const distanceB = getDistanceFromLatLonInKm(
+              latitude,
+              longitude,
+              latB,
+              longB
+            );
+            if (distanceA < distanceB)
+              return -1; // if return -1 then sort a before b
+            else if (distanceA > distanceB)
+              return 1; // if return 1 then sort b before a
+            else return 0; // distances equal
+          })
+        );
+      } else {
+        // Sort alphabetically
+        setSchools(
+          schoolData.schools.sort((a: SchoolObject, b: SchoolObject) => {
+            const nameA = a.name.toLowerCase();
+            const nameB = b.name.toLowerCase();
+            if (nameA < nameB) return -1; // if return -1 then sort a before b
+            else if (nameA > nameB)
+              return 1; // if return 1 then sort b before a
+            else return 0; // names equal
+          })
+        );
+        setFilteredSchools(
+          schoolData.schools.sort((a: SchoolObject, b: SchoolObject) => {
+            const nameA = a.name.toLowerCase();
+            const nameB = b.name.toLowerCase();
+            if (nameA < nameB) return -1; // if return -1 then sort a before b
+            else if (nameA > nameB)
+              return 1; // if return 1 then sort b before a
+            else return 0; // names equal
+          })
+        );
+      }
     }
+    getLocation();
     fetchSchools();
-  }, []);
+    // only want this useEffect to fire on initial render and when locationAllowed changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationAllowed]);
 
-  /**
-   * Event handler that is passed to SearchBar component
-   * @param searchBarInput - User input from search bar
-   */
-  function handleSearchBar(searchBarInput: string) {
-    setSearchBarValue(searchBarInput);
+  // Filters array of schools based on user input
+  useEffect(() => {
     setFilteredSchools(
       schools.filter((school) =>
         school.name.toLowerCase().includes(searchBarValue.toLowerCase())
       )
     );
-  }
+  }, [schools, searchBarValue]);
 
   // Create school card for all schools included in filtered array
+  // Best practice to include map function outside of return
   const schoolCards = filteredSchools.map((school) => (
     <SchoolCard
       key={school.id}
