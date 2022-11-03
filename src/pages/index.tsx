@@ -1,5 +1,5 @@
 import styles from "../styles/Home.module.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 type SchoolCardProps = {
@@ -76,6 +76,43 @@ function SchoolCard(props: SchoolCardProps): JSX.Element {
 
 export default function Home() {
   const [searchBarValue, setSearchBarValue] = useState("");
+  // State to hold original array of schools returned from API
+  // Initial values of loading for UI before API returns response
+  const [schools, setSchools] = useState([
+    { id: 0, name: "loading", county: "loading" },
+  ]);
+  // State to hold filtered school array returned from search bar
+  // Initial values of loading for UI before API returns response
+  const [filteredSchools, setFilteredSchools] = useState([
+    { id: 0, name: "loading", county: "loading" },
+  ]);
+
+  // Fetches data from API and sets state
+  useEffect(() => {
+    async function fetchSchools() {
+      const res = await fetch("https://api.sendbeacon.com/team/schools");
+
+      // Checks for valid response
+      if (!res || res.status !== 200) {
+        setSchools([
+          { id: 0, name: "failed to load", county: "failed to load" },
+        ]);
+      }
+      const schoolData = await res.json();
+
+      // Checks that response payload is valid
+      // Possible improvement: Add JSON schema check to ensure API returns expected data structure
+      if (!schoolData) {
+        setSchools([
+          { id: 0, name: "failed to load", county: "failed to load" },
+        ]);
+      }
+
+      setSchools(schoolData.schools);
+      setFilteredSchools(schoolData.schools);
+    }
+    fetchSchools();
+  }, []);
 
   /**
    * Event handler that is passed to SearchBar component
@@ -83,7 +120,21 @@ export default function Home() {
    */
   function handleSearchBar(searchBarInput: string) {
     setSearchBarValue(searchBarInput);
+    setFilteredSchools(
+      schools.filter((school) =>
+        school.name.toLowerCase().includes(searchBarValue.toLowerCase())
+      )
+    );
   }
+
+  // Create school card for all schools included in filtered array
+  const schoolCards = filteredSchools.map((school) => (
+    <SchoolCard
+      key={school.id}
+      universityName={school.name}
+      location={school.county}
+    />
+  ));
 
   return (
     <main className={styles.container}>
@@ -96,10 +147,7 @@ export default function Home() {
         searchBarValue={searchBarValue}
         handleSearchBarValue={handleSearchBar}
       />
-      <SchoolCard
-        universityName="Test School"
-        location="Test Location"
-      ></SchoolCard>
+      <div className={styles.schoolCardContainer}>{schoolCards}</div>
     </main>
   );
 }
