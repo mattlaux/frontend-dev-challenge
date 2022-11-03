@@ -1,6 +1,10 @@
 import styles from "../styles/Home.module.css";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Ajv, { JSONSchemaType } from "ajv";
+// ajv used to validate the API response matches what the program expects
+// https://ajv.js.org/guide/getting-started.html
+const ajv = new Ajv({ allErrors: true, code: { esm: true } });
 
 type SchoolCardProps = {
   universityName: string;
@@ -22,6 +26,40 @@ type SchoolObject = {
   name: string;
 };
 
+type APIResponse = {
+  schools: SchoolObject[];
+};
+
+// JSON schema used to validate the API response
+const schema: JSONSchemaType<APIResponse> = {
+  title: "API Response",
+  description: "Object with array of schools",
+  type: "object",
+  properties: {
+    schools: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+          county: { type: "string" },
+          coordinates: {
+            type: "object",
+            properties: {
+              lat: { type: "number" },
+              long: { type: "number" },
+            },
+            required: ["lat", "long"],
+          },
+        },
+        required: ["id", "name", "county", "coordinates"],
+      },
+    },
+  },
+  required: ["schools"],
+};
+
 // I would typically have all of these components and functions broken up into individual files
 // but requirements requested everything be done in the index.tsx file.
 
@@ -34,6 +72,10 @@ type SchoolObject = {
 // I created a custom _document.tsx file as a general template for the Next.js page. The primary
 // purpose was to add the html=en tag as well as import the Poppins font from Google fonts. This
 // is the recommended best practice from the Next.js docs.
+
+// I would typically write component tests with React Testing Library
+// I would typically write integration tests with Cypress
+// I would typically mock the API call with Mock Service Worker for testing
 
 /**
  * React controlled input (State handled by parent React Container instead of HTML DOM. Best practice)
@@ -126,12 +168,12 @@ export default function Home() {
   // State to hold original array of schools returned from API
   // Initial values of loading for UI before API returns response
   const [schools, setSchools] = useState([
-    { id: 0, name: "loading", county: "loading" },
+    { id: "0", name: "loading", county: "loading" },
   ]);
   // State to hold filtered school array returned from search bar
   // Initial values of loading for UI before API returns response
   const [filteredSchools, setFilteredSchools] = useState([
-    { id: 0, name: "loading", county: "loading" },
+    { id: "0", name: "loading", county: "loading" },
   ]);
   // State to hold whether user allows location privileges
   const [locationAllowed, setLocationAllowed] = useState(false);
@@ -178,17 +220,20 @@ export default function Home() {
       // Checks for valid response
       if (!res || res.status !== 200) {
         setSchools([
-          { id: 0, name: "failed to load", county: "failed to load" },
+          { id: "0", name: "failed to load", county: "failed to load" },
         ]);
       }
       const schoolData = await res.json();
 
-      // Checks that response payload is valid
-      // Possible improvement: Add JSON schema check to ensure API returns expected data structure
-      if (!schoolData) {
+      // Validate the response from the API matches what is expected
+      // If it does not match we can handle the discrepency gracefully
+      const validate = ajv.compile(schema);
+      const valid = validate(schoolData);
+      if (!valid) {
         setSchools([
-          { id: 0, name: "failed to load", county: "failed to load" },
+          { id: "0", name: "failed to load", county: "failed to load" },
         ]);
+        return;
       }
 
       if (locationAllowed) {
