@@ -12,6 +12,19 @@ type SearchBarProps = {
   handleSearchBarValue: (searchBarInput: string) => void;
 };
 
+// I would typically have all of these components broken up into individual files
+// but requirements requested everything be done in the index.tsx file.
+
+// I would also typically have all component CSS styles in individual module files
+// but requirements requested everything be done in the Home.module.css file
+
+// I moved the svg files into the public folder as this is easier to integrate
+// with the Next.js Image component.
+
+// I created a custom _document.tsx file as a general template for the Next.js page. The primary
+// purpose was to add the html=en tag as well as import the Poppins font from Google fonts. This
+// is the recommended best practice from the Next.js docs.
+
 /**
  * React controlled input (State handled by parent React Container instead of HTML DOM. Best practice)
  * https://reactjs.org/docs/forms.html#controlled-components
@@ -74,6 +87,10 @@ export default function Home() {
 
   return (
     <main className={styles.container}>
+      <header className={styles.header}>
+        <Image src="/logo.svg" alt="Beacon logo" width={27} height={22} />
+        <p>BEACON</p>
+      </header>
       <h1>Pick Your School</h1>
       <SearchBar
         searchBarValue={searchBarValue}
