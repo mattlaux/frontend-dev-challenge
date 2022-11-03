@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "ajv": "^8.11.0",
     "bootstrap": "^5.2.2",
     "bootstrap-icons": "^1.9.1",
     "next": "13.0.0",
