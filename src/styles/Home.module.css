@@ -1,0 +1,89 @@
+.container {
+  display: grid;
+  grid-template-columns: 0.15fr 1fr 0.15fr;
+  grid-template-rows: repeat(4, 1fr);
+  text-align: center;
+  min-width: 300px;
+}
+
+.container h1 {
+  grid-column: 2 / span 1;
+}
+
+.schoolCard {
+  grid-column: 2 / span 1;
+  background: #282e3c;
+  border-radius: 20px;
+  display: grid;
+  grid-template-columns: 0.25fr 1fr 0.25fr;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  justify-items: start;
+}
+
+.schoolCard:hover {
+  background-color: #161921;
+}
+
+.h2Text {
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: #ffffff;
+  grid-column: 2 / span 1;
+  grid-row: 1 / span 1;
+  align-self: end;
+  margin-bottom: 0;
+  margin-left: 0.5rem;
+}
+
+.locationText {
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+  color: #ffffff;
+  grid-column: 2 / span 1;
+  grid-row: 2 / span 1;
+  margin-left: 0.5rem;
+}
+
+.initialContainer {
+  grid-column: 1 / span 1;
+  grid-row: 1 / span 2;
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-size: 2rem;
+  line-height: 3rem;
+  color: #ffffff;
+  padding-left: 1rem;
+}
+
+.initial {
+  margin-bottom: 0;
+  padding-top: 0.2rem;
+  height: 54px;
+  width: 54px;
+  background: linear-gradient(127.55deg, #0224d9 -44.16%, #04002b 74.85%);
+  border-radius: 50%;
+}
+
+@media only screen and (min-width: 768px) {
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    text-align: center;
+  }
+
+  .schoolCard {
+    grid-template-columns: 0.75fr 4fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .h2Text {
+    grid-column: 2 / span 1;
+    grid-row: 1 / span 1;
+  }
+}
